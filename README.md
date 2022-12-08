@@ -10,21 +10,21 @@ The server side script will transform the output of `wg show` into JSON:
     "peers": [
         {
             "interface": "wg0",
-            "public-key": "Koooooooooooooooooooooooooooooooooooooooook=",
+            "public_key": "Koooooooooooooooooooooooooooooooooooooooook=",
             "port": 51230,
             "fwmark": null,
             "role": "local"
         },
         {
             "interface": "wg0",
-            "public-key": "xXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXa=",
-            "preshared-key": null,
+            "public_key": "xXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXa=",
+            "preshared_key": null,
             "endpoint": "12.123.45.89:38639",
-            "allowed-ips": "192.168.78.2/32",
-            "latest-handshake": 1670476120,
-            "transfer-rx": 41642124,
-            "transfer-tx": 98421512,
-            "persistent-keepalive": null,
+            "allowed_ips": "192.168.78.2/32",
+            "latest_handshake": 1670476120,
+            "transfer_rx": 41642124,
+            "transfer_tx": 98421512,
+            "persistent_keepalive": null,
             "role": "remote"
         }
     ]

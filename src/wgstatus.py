@@ -20,27 +20,27 @@ logger = logging.getLogger(__name__)
 
 def get_remote(values, interface='all'):
     """ The fields in order they appear in the wg output """
-    fields = ['public-key', 'preshared-key', 'endpoint', 'allowed-ips', 'latest-handshake', 'transfer-rx', 'transfer-tx', 'persistent-keepalive']
+    fields = ['public_key', 'preshared_key', 'endpoint', 'allowed_ips', 'latest_handshake', 'transfer_rx', 'transfer_tx', 'persistent_keepalive']
     if len(values) == 9:
         fields.insert(0, 'interface')
     peer = dict(zip(fields, values))
 
-    #peer['allowed-ips'] = peer['allowed-ips'].split(',')
-    if peer['preshared-key'] == '(none)':
-        peer['preshared-key'] = None
-    if peer['persistent-keepalive'] == 'off':
-        peer['persistent-keepalive'] = None
+    #peer['allowed_ips'] = peer['allowed_ips'].split(',')
+    if peer['preshared_key'] == '(none)':
+        peer['preshared_key'] = None
+    if peer['persistent_keepalive'] == 'off':
+        peer['persistent_keepalive'] = None
     peer['role'] = 'remote'
     return peer
 
 def get_local(values):
     """ The fields in order they appear in the wg output """
-    fields = ['private-key', 'public-key', 'port', 'fwmark']
+    fields = ['private_key', 'public_key', 'port', 'fwmark']
     if len(values) == 5:
         fields.insert(0, 'interface')
 
     peer = dict(zip(fields, values))
-    peer.pop('private-key')
+    peer.pop('private_key')
 
     if peer['fwmark'] == 'off':
         peer['fwmark'] = None
@@ -57,7 +57,7 @@ def get_peer(line):
     else:
         raise Exception('Unknown format')
 
-    peer = { k: int(v) if (k in ['port','latest-handshake', 'transfer-rx', 'transfer-tx', 'persistent-keepalive']) and (v is not None) else v
+    peer = { k: int(v) if (k in ['port','latest_handshake', 'transfer_rx', 'transfer_tx', 'persistent_keepalive']) and (v is not None) else v
                  for k, v in peer.items() } # numeric strings to integer
 
     return peer
@@ -79,7 +79,7 @@ def wg_output(interface='all'):
     for i, line in enumerate(proc.stdout.splitlines()):
         peer = get_peer(line)
         if_ = interface if not 'interface' in peer else peer['interface']
-        logger.info('if {} peer {}'.format(if_, peer['public-key']))
+        logger.info('if {} peer {}'.format(if_, peer['public_key']))
         peers.append(peer)
 
     logger.info('{} peers'.format(str(len(peers))))

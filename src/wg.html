@@ -1,133 +1,142 @@
 <html>
 <head>
 <script ></script>
-    <style type="text/css">
+<style type="text/css">
     body {font-family:monospace}
-    .peer {padding: .5vh; margin: 1em 0; color: #333}
-    .peer.local  { border-bottom: 1em solid #666}
+    .peer{display:flex; flex-direction: row; justify-content: space-between; align-items: center; padding: .5vh; margin: .5vh 0; color: #333}
+    .peer span { margin: 0 0 0 1.5vh }
+    .peer.local  { background-color: #a5a5a5; border-bottom: 1em solid #838485; padding:.1vh; margin:0}
     small, .date  { font-size: .7rem}
     .lost { background-color: red; color: #fff }
     .peer.online { background-color: rgba(100,200,0,0.9); }
     .peer.recent { background-color: rgba(0,255,0,0.4); }
     .peer.offline { background-color: rgba(255, 255, 180, 0.9);}
     .peer.lost { background-color: rgba(255, 0, 0, 0.9);}
-    h2{display:flex; flex-direction: row; justify-content: space-between; align-items: center}
-    </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 </head>
 <body>
 <script>
-function update() {
-fetch('wg.json')
-  .then(function (response) {
-    return response.json();
-  })
-  .then(function (data) {
-    appendData(data);
-  })
-  .catch(function (err) {
-  });
+config = {
+    locale:             'de',
+    polling_interval:   5000,
 }
+
 setInterval(function() {
     update()
-}, 5000)
+}, config.polling_interval)
 
-update()
-function get_units(traffic) {
+function bytes_with_units(traffic)
+{
     m = 1
     u = 'bytes'
-    if (peer['transfer-rx'] > 1000000000) {
+    if (traffic > 1000000000) {
         m = 1000000000
         u = 'GiB'
     }
-    else if (peer['transfer-rx'] > 1000000) {
+    else if (traffic > 1000000) {
         m = 1000000
         u = 'MiB'
     }
-    else if (peer['transfer-rx'] > 1000) {
+    else if (traffic > 1000) {
         m = 1000
         u = 'KiB'
     }
     return {
-        'b'   : traffic,
-        'display' : (traffic / m).toFixed(2)+u,
-        'unit'    : u
+        'bytes'   : traffic,
+        'unit'    : u,
+        'html' : (traffic / m).toFixed(2)+'&nbsp;'+u,
     }
 }
 
-function peerHtml(peer)
+function getStatus(peer, currentDate)
 {
-    var peerdiv = document.createElement("div");
-    peerdiv.className = 'peer'
-    var VERY_RECENT = 60 * 2 * 1000; 
-    var ONE_HOUR = 60 * 60 * 1000; 
-    var YESTERDAY = ONE_HOUR * 24;
+    var ONLINE = 60 * 2 * 1000; 
+    var RECENT = 60 * 60 * 1000; 
+    var YESTERDAY = 60 * 60 * 24 * 1000;
 
-    if (peer.role == 'remote')  {
-        peerDate = new Date(peer['latest-handshake']*1000)
-        if (currentDate - peerDate <= VERY_RECENT ) {
-            lastSeenClass = 'online'
-        }
-        else if (currentDate - peerDate <= ONE_HOUR) {
-            lastSeenClass = 'recent'
-        }
-        else if (currentDate - peerDate > ONE_HOUR) {
-            lastSeenClass = 'offline'
-        }
-        else if (currentDate - peerDate > YESTERDAY) {
-            lastSeenClass = 'lost'
-        }
-        peerdiv.classList.add(lastSeenClass)
+    if (!peer['latest_handshake']) {
+        return 'local'
     }
 
-    peerdiv.classList.add(peer.role)
-    var h = document.createElement('h2')
-    h.innerHTML = peer['public-key'].substring(0,6)+'&hellip;'
-    s = document.createElement('small')
-    s.innerHTML = peer['allowed-ips']
-    h.appendChild(s)
-
-    if (peer['role'] == 'remote') {
-        var p = document.createElement('p')
-        p.className = 'date'
-        p.innerHTML = peerDate.toLocaleString("de")
-        h.appendChild(p)
+    peerDate = new Date(peer['latest_handshake']*1000)
+    if (currentDate - peerDate <= ONLINE ) {
+        return 'online'
+    }
+    else if (currentDate - peerDate <= RECENT) {
+        return 'recent'
+    }
+    else if (currentDate - peerDate <=YESTERDAY ) {
+        return 'offline'
     }
     else {
-        var p = document.createElement('p')
-        p.innerHTML = peer['interface']
-        h.appendChild(p)
+        return 'lost'
     }
-
-    peerdiv.appendChild(h)
-
-    if (peer['role'] == 'remote') {
-        rx = get_units(peer['transfer-rx'])
-        tx = get_units(peer['transfer-tx'])
-        var p = document.createElement('p')
-        p.className = 'traffic'
-        p.innerHTML = '&#11014; '+rx['display'] +' | &#11015; '+ tx['display']
-        peerdiv.appendChild(p)
-    }
-    return peerdiv
-}
-
-function appendData(data) {
-  var mainContainer = document.getElementById("wg");
-  mainContainer.innerHTML = ''
-  currentDate = new Date(data.updated+"Z")
-  document.getElementById("updated").innerHTML = currentDate.toLocaleString('de')
-  peers = data['peers']
-  for (var i = 0; i < peers.length; i++) {
-    peer = peers[i]
-    mainContainer.appendChild(peerHtml(peer));
-  }
 }
 
 </script>
-<h1>WG Status <small id="updated"></small></h1>
-<div id="wg"></div>
+
+<div id="updated"></div>
+<h1>Wireguard status</h1>
+<div id="wg">
+</div>
+<script>
+
+function update() {
+fetch('wg.json')
+    .then(function (response) {
+        return response.json();
+    })
+    .then(function (response) {
+        let currentDate = new Date(response.updated+"Z")
+        document.getElementById("updated").innerHTML = currentDate.toLocaleString(config.locale) + ' ('+Intl.DateTimeFormat().resolvedOptions().timeZone+ " polling: "+config.polling_interval/1000+' s)'
+
+        let m = document.getElementById("wg");
+        m.innerHTML = ''
+
+        let peers = response.peers
+        let fragment = new DocumentFragment();
+
+        peers.map(function(peer) {
+            let p = document.createElement('div')
+            p.classList.add('peer')
+            p.classList.add(getStatus(peer, currentDate))
+
+            let name = document.createElement('h2');
+
+            name.innerHTML = `${peer.public_key}`.substring(0,6)+'&hellip;'
+            p.appendChild(name);
+
+            if (peer.role == 'local') {
+                let interface_ = document.createElement('span');
+                interface_.class = 'interface'
+                interface_.innerHTML = `${peer.interface}`;
+                p.appendChild(interface_);
+            }
+            else {
+                let traffic = document.createElement('span');
+                traffic.innerHTML =  'DOWN&#11015;&nbsp;'+bytes_with_units(peer.transfer_tx)['html']
+                traffic.innerHTML += ' UP&#11014;&nbsp;'+  bytes_with_units(peer.transfer_rx)['html']
+                p.appendChild(traffic);
+
+                let dt = document.createElement('span')
+                peerDate = new Date(peer.latest_handshake*1000)
+                dt.innerHTML = peerDate.toLocaleString("de")
+                p.appendChild(dt);
+            }
+            fragment.appendChild(p)
+        });
+        m.appendChild(fragment)
+
+    })
+    .catch(function (err) {
+    });
+}
+
+update()
+</script>
+
 </body>
 </html
 
