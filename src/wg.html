@@ -1,0 +1,133 @@
+<html>
+<head>
+<script ></script>
+    <style type="text/css">
+    body {font-family:monospace}
+    .peer {padding: .5vh; margin: 1em 0; color: #333}
+    .peer.local  { border-bottom: 1em solid #666}
+    small, .date  { font-size: .7rem}
+    .lost { background-color: red; color: #fff }
+    .peer.online { background-color: rgba(100,200,0,0.9); }
+    .peer.recent { background-color: rgba(0,255,0,0.4); }
+    .peer.offline { background-color: rgba(255, 255, 180, 0.9);}
+    .peer.lost { background-color: rgba(255, 0, 0, 0.9);}
+    h2{display:flex; flex-direction: row; justify-content: space-between; align-items: center}
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+<body>
+<script>
+function update() {
+fetch('wg.json')
+  .then(function (response) {
+    return response.json();
+  })
+  .then(function (data) {
+    appendData(data);
+  })
+  .catch(function (err) {
+  });
+}
+setInterval(function() {
+    update()
+}, 5000)
+
+update()
+function get_units(traffic) {
+    m = 1
+    u = 'bytes'
+    if (peer['transfer-rx'] > 1000000000) {
+        m = 1000000000
+        u = 'GiB'
+    }
+    else if (peer['transfer-rx'] > 1000000) {
+        m = 1000000
+        u = 'MiB'
+    }
+    else if (peer['transfer-rx'] > 1000) {
+        m = 1000
+        u = 'KiB'
+    }
+    return {
+        'b'   : traffic,
+        'display' : (traffic / m).toFixed(2)+u,
+        'unit'    : u
+    }
+}
+
+function peerHtml(peer)
+{
+    var peerdiv = document.createElement("div");
+    peerdiv.className = 'peer'
+    var VERY_RECENT = 60 * 2 * 1000; 
+    var ONE_HOUR = 60 * 60 * 1000; 
+    var YESTERDAY = ONE_HOUR * 24;
+
+    if (peer.role == 'remote')  {
+        peerDate = new Date(peer['latest-handshake']*1000)
+        if (currentDate - peerDate <= VERY_RECENT ) {
+            lastSeenClass = 'online'
+        }
+        else if (currentDate - peerDate <= ONE_HOUR) {
+            lastSeenClass = 'recent'
+        }
+        else if (currentDate - peerDate > ONE_HOUR) {
+            lastSeenClass = 'offline'
+        }
+        else if (currentDate - peerDate > YESTERDAY) {
+            lastSeenClass = 'lost'
+        }
+        peerdiv.classList.add(lastSeenClass)
+    }
+
+    peerdiv.classList.add(peer.role)
+    var h = document.createElement('h2')
+    h.innerHTML = peer['public-key'].substring(0,6)+'&hellip;'
+    s = document.createElement('small')
+    s.innerHTML = peer['allowed-ips']
+    h.appendChild(s)
+
+    if (peer['role'] == 'remote') {
+        var p = document.createElement('p')
+        p.className = 'date'
+        p.innerHTML = peerDate.toLocaleString("de")
+        h.appendChild(p)
+    }
+    else {
+        var p = document.createElement('p')
+        p.innerHTML = peer['interface']
+        h.appendChild(p)
+    }
+
+    peerdiv.appendChild(h)
+
+    if (peer['role'] == 'remote') {
+        rx = get_units(peer['transfer-rx'])
+        tx = get_units(peer['transfer-tx'])
+        var p = document.createElement('p')
+        p.className = 'traffic'
+        p.innerHTML = '&#11014; '+rx['display'] +' | &#11015; '+ tx['display']
+        peerdiv.appendChild(p)
+    }
+    return peerdiv
+}
+
+function appendData(data) {
+  var mainContainer = document.getElementById("wg");
+  mainContainer.innerHTML = ''
+  currentDate = new Date(data.updated+"Z")
+  document.getElementById("updated").innerHTML = currentDate.toLocaleString('de')
+  peers = data['peers']
+  for (var i = 0; i < peers.length; i++) {
+    peer = peers[i]
+    mainContainer.appendChild(peerHtml(peer));
+  }
+}
+
+</script>
+<h1>WG Status <small id="updated"></small></h1>
+<div id="wg"></div>
+</body>
+</html
+
