@@ -1,6 +1,7 @@
 # Wgstatus
 
 Wgstatus is Python/HTML based script to display the connectivity of peers on a Wireguard interface in a web browser
+![](wgstatus.png)
 
 ### Prerequisites
 
