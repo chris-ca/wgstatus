@@ -1,61 +1,34 @@
 # Wgstatus
 
-Wgstatus is Python/HTML based script to display the connectivity of peers with local wireguard interfaces.
+Wgstatus is Python/HTML based script to display the connectivity of peers on a Wireguard interface in a web browser
 
-The server side script will transform the output of `wg show` into JSON:
+### Prerequisites
 
-```json
-{
-    "updated": "2022-12-08T05:09:15.156042",
-    "peers": [
-        {
-            "interface": "wg0",
-            "public_key": "Koooooooooooooooooooooooooooooooooooooooook=",
-            "port": 51230,
-            "fwmark": null,
-            "role": "local"
-        },
-        {
-            "interface": "wg0",
-            "public_key": "xXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXa=",
-            "preshared_key": null,
-            "endpoint": "12.123.45.89:38639",
-            "allowed_ips": "192.168.78.2/32",
-            "latest_handshake": 1670476120,
-            "transfer_rx": 41642124,
-            "transfer_tx": 98421512,
-            "persistent_keepalive": null,
-            "role": "remote"
-        }
-    ]
-}
-```
-
-The client side will display 
-## Development Goals
-- Display data from `wg` without having to invoke `wg` by the web server process
-- Lean: No use of frontend libraries such as vue.js or bootstrap
-- Exercise: Implement a websocket or HTTP PUSH for "real time" updates
-- No (web) server side scripting 
+On the machine running the monitored wireguard interface:
+- Python is installed
+- A web server is running to host the HTML file (or else, start a web server with `python3 -m http.server -d /var/www/html --bind 192.168.78.1 8080`)
 
 ## Installation
-```bash
-pip install ... #FIXME
-```
 
-## Usage
-Create a systemd service file and copy it to `/etc/systemd/system/wgstatus.service`
+- Copy script to permanent location, e.g. `sudo cp wgstatus.py /usr/local/bin`
+- Create a systemd service file and copy it to `/etc/systemd/system/wgstatus.service`
+    ```ini
+    [Unit]
+    Description=Wireguard status service
+    After=multi-user.target
 
-```ini
-[Unit]
-Description=Wireguard status service
-After=multi-user.target
+    [Service]
+    Type=simple
+    Restart=always
+    ExecStart=/usr/bin/python3 /usr/local/bin/wgstatus.py
 
-[Service]
-Type=simple
-Restart=always
-ExecStart=/usr/bin/python3 /usr/local/bin/wgstatus.py
+    [Install]
+    WantedBy=multi-user.target
+    ```
 
-[Install]
-WantedBy=multi-user.target
-```
+## Development Goals
+
+- Display data from `wg` without having to invoke `wg` by the web server process
+- Lean: No use of frontend libraries such as vue.js or bootstrap
+- No web server side scripting 
+
